@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: snapbite_db
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASS:-securetestpassword}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_DB: ${DB_NAME:-snapbite_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: snapbite_backend
+    restart: always
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  bot:
+    build: ./bot
+    container_name: snapbite_bot
+    restart: always
+    command: python main.py
+    volumes:
+      - ./bot:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - backend
+
+  frontend:
+    image: nginx:alpine
+    container_name: snapbite_frontend
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

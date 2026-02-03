@@ -1,8 +1,9 @@
+from __future__ import annotations
 import uuid
 from datetime import datetime
 from typing import Dict, TYPE_CHECKING, Any
 from sqlalchemy import DateTime, String, Text, ForeignKey, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from .base import Base
 
@@ -23,4 +24,4 @@ class AiAudit(Base):
     model_version: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
 
-    food_log: Mapped["FoodLog"] = mapped_column("FoodLog", back_populates="ai_audits")
+    food_log: Mapped["FoodLog"] = relationship("FoodLog", back_populates="ai_audits")

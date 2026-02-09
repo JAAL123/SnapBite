@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     DB_PORT: int
     DB_NAME: str
 
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+
     model_config = SettingsConfigDict(
         env_file=".env", env_ignore_empty=True, extra="ignore"
     )

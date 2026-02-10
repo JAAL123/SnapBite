@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 class UserBase(BaseModel):
     email: EmailStr
     username: str
-    daily_calories_goal: float = 2000.0
+    daily_calory_goal: float = 2000.0
 
 
 class UserCreate(UserBase):

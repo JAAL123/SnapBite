@@ -25,7 +25,7 @@ class User(Base):
     telegram_id: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True, unique=True, index=True
     )
-    daily_calory_goa: Mapped[float] = mapped_column(Float, default=2000.0)
+    daily_calory_goal: Mapped[float] = mapped_column(Float, default=2000.0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
 
     food_logs: Mapped[List["FoodLog"]] = relationship(

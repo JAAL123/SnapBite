@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.endpoints import food_log, login, users
+from app.api.endpoints import food_log, login, users, ai
 
 
 api_router = APIRouter()
@@ -7,3 +7,4 @@ api_router = APIRouter()
 api_router.include_router(login.router, prefix="/login", tags=["Login"])
 api_router.include_router(users.router, prefix="/users", tags=["Users"])
 api_router.include_router(food_log.router, prefix="/food-logs", tags=["Food Logs"])
+api_router.include_router(ai.router, prefix="/ai", tags=["AI Analysis"])

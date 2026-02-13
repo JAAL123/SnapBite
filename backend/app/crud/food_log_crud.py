@@ -1,11 +1,15 @@
+from uuid import UUID
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.food_log import FoodLog
 from app.schemas.food_log_scheema import FoodLogCreate
 
 
-async def create_food_log(db: AsyncSession, food_log: FoodLogCreate) -> FoodLog:
-    db_food_log = FoodLog(**food_log.model_dump())
+async def create_food_log(
+    db: AsyncSession, food_log: FoodLogCreate, user_id: UUID
+) -> FoodLog:
+    db_food_log = FoodLog(**food_log.model_dump(), user_id=user_id)
     db.add(db_food_log)
     await db.commit()
     await db.refresh(db_food_log)

@@ -8,15 +8,15 @@ from app.models.food_log import Source
 class FoodLogBase(BaseModel):
     food_name: str
     calories: float
-    protein: float = 0.0
+    proteins: float = 0.0
     carbs: float = 0.0
-    fat: float = 0.0
+    fats: float = 0.0
     image_url: Optional[str] = None
     source: Source = Source.WEB
 
 
 class FoodLogCreate(FoodLogBase):
-    user_id: UUID
+    pass
 
 
 class FoodLogResponse(FoodLogBase):

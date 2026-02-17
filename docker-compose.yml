@@ -30,7 +30,7 @@ services:
     build: ./bot
     container_name: snapbite_bot
     restart: always
-    command: python main.py
+    command: uv run python -m app.main
     volumes:
       - ./bot:/app
     env_file:

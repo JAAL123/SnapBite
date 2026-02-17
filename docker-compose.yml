@@ -33,6 +33,7 @@ services:
     command: uv run python -m app.main
     volumes:
       - ./bot:/app
+      - /app/.venv
     env_file:
       - .env
     depends_on:

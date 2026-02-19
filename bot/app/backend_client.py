@@ -1,13 +1,18 @@
 import aiohttp
 from app.config import BACKEND_URL
 
-async def analyze_text_with_backend(text: str):
+async def analyze_text_with_backend(text: str | None = None, image_base64: str | None = None):
     """
-    Envía el texto al endpoint /ai/analyze del backend.
+    Envía texto y/o imagen en Base64 al endpoint /ai/analyze del backend.
     """
     url = f"{BACKEND_URL}/ai/analyze"
     
-    payload = {"query": text}
+    payload = {}
+    if text:
+        payload["query"] = text
+    if image_base64:
+        payload["image_base64"] = image_base64
+        payload["media_type"] = "image/jpeg"
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -16,8 +21,8 @@ async def analyze_text_with_backend(text: str):
                     return await response.json()
                 else:
                     error_text = await response.text()
-                    print(f"Error del Backend ({response.status}): {error_text}")
+                    print(f"❌ Error del Backend ({response.status}): {error_text}")
                     return None
     except Exception as e:
-        print(f"Error de conexión con el Backend: {e}")
+        print(f"🔥 Error de conexión con el Backend: {e}")
         return None

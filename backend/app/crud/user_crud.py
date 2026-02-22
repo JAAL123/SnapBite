@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.security import get_password_hash, verify_password
 from app.models.user import User
-from app.schemas.user_scheema import UserCreate, UserCreateTelegram
+from app.schemas.user_scheema import UserCreate
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
@@ -39,13 +39,13 @@ async def authenticate(db: AsyncSession, email: str, password: str) -> Optional[
 
 
 async def get_or_create_telegram_user(
-    user_in: UserCreateTelegram,
     db: AsyncSession,
     telegram_id: int,
     first_name: str,
     tg_username: str | None = None,
 ) -> User:
-    query = Select(User).where(User.telegram_id == telegram_id)
+    
+    query = select(User).where(User.telegram_id == telegram_id)
     result = await db.execute(query)
     user = result.scalar_one_or_none()
 
@@ -63,7 +63,7 @@ async def get_or_create_telegram_user(
         email=dummy_email,
         password_hash=get_password_hash(dummy_password),
         telegram_id=telegram_id,
-        daily_calory_goal=user_in.daily_calory_goal,
+        daily_calory_goal=2000.0, 
     )
 
     db.add(new_user)

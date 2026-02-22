@@ -12,6 +12,17 @@ class UserCreate(UserBase):
     password: str
 
 
+class UserCreateTelegram(UserBase):
+    telegram_id: int
+    first_name: str
+    username: str | None = None
+
+
+class UserInDB(UserBase):
+    id: UUID
+    password: str
+
+
 class UserResponse(UserBase):
     id: UUID
 

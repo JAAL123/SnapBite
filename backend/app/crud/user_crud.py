@@ -1,9 +1,10 @@
 from typing import Optional
+from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.security import get_password_hash, verify_password
 from app.models.user import User
-from app.schemas.user_scheema import UserCreate
+from app.schemas.user_scheema import UserCreate, UserCreateTelegram
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
@@ -35,3 +36,38 @@ async def authenticate(db: AsyncSession, email: str, password: str) -> Optional[
     if not verify_password(password, user.password_hash):
         return None
     return user
+
+
+async def get_or_create_telegram_user(
+    user_in: UserCreateTelegram,
+    db: AsyncSession,
+    telegram_id: int,
+    first_name: str,
+    tg_username: str | None = None,
+) -> User:
+    query = Select(User).where(User.telegram_id == telegram_id)
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+
+    if user:
+        return user
+
+    base_name = tg_username if tg_username else first_name
+    safe_username = f"{base_name}_{telegram_id}"[:50]
+
+    dummy_email = f"{telegram_id}@telegram.snapbite.app"
+    dummy_password = "telegram_auth_password"
+
+    new_user = User(
+        username=safe_username,
+        email=dummy_email,
+        password_hash=get_password_hash(dummy_password),
+        telegram_id=telegram_id,
+        daily_calory_goal=user_in.daily_calory_goal,
+    )
+
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+
+    return new_user

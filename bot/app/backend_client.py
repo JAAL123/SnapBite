@@ -1,13 +1,24 @@
 import aiohttp
 from app.config import BACKEND_URL
 
-async def analyze_text_with_backend(text: str | None = None, image_base64: str | None = None):
+async def analyze_text_with_backend(
+    telegram_id: int,
+    first_name: str,
+    username: str | None = None,
+    text: str | None = None, 
+    image_base64: str | None = None
+):
     """
-    Envía texto y/o imagen en Base64 al endpoint /ai/analyze del backend.
+    Envía datos del usuario, texto y/o imagen al endpoint /ai/analyze.
     """
     url = f"{BACKEND_URL}/ai/analyze"
     
-    payload = {}
+    payload = {
+        "telegram_id": telegram_id,
+        "first_name": first_name,
+        "username": username
+    }
+    
     if text:
         payload["query"] = text
     if image_base64:

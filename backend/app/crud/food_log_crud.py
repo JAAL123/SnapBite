@@ -1,5 +1,8 @@
 from uuid import UUID
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
+from sqlalchemy import func, cast, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.food_log import FoodLog
@@ -21,3 +24,25 @@ async def get_food_logs(
 ) -> list[FoodLog]:
     result = await db.execute(select(FoodLog).offset(skip).limit(limit))
     return result.scalars().all()
+
+
+async def get_daily_summary_by_user(db: AsyncSession, user_id: UUID) -> dict:
+    sv_tz = ZoneInfo("America/El_Salvador")
+    today = datetime.now(sv_tz).date()
+
+    query = select(
+        func.sum(FoodLog.calories).label("total_calories"),
+        func.sum(FoodLog.proteins).label("total_proteins"),
+        func.sum(FoodLog.carbs).label("total_carbs"),
+        func.sum(FoodLog.fats).label("total_fats"),
+    ).where(FoodLog.user_id == user_id, cast(FoodLog.created_at, Date) == today)
+
+    result = await db.execute(query)
+    totals = result.one()
+
+    return {
+        "total_calories": totals.total_calories or 0.0,
+        "total_proteins": totals.total_proteins or 0.0,
+        "total_carbs": totals.total_carbs or 0.0,
+        "total_fats": totals.total_fats or 0.0,
+    }

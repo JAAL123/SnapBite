@@ -25,3 +25,17 @@ class FoodLogResponse(FoodLogBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class MacrosResponse(BaseModel):
+    calories: float
+    proteins: float
+    carbs: float
+    fats: float
+
+
+class DailySummaryResponse(BaseModel):
+    daily_goal: float
+    consumed_calories: float
+    remaning_calories: float
+    macros: MacrosResponse

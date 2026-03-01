@@ -1,24 +1,25 @@
 import aiohttp
 from app.config import BACKEND_URL
 
+
 async def analyze_text_with_backend(
     telegram_id: int,
     first_name: str,
     username: str | None = None,
-    text: str | None = None, 
-    image_base64: str | None = None
+    text: str | None = None,
+    image_base64: str | None = None,
 ):
     """
     Envía datos del usuario, texto y/o imagen al endpoint /ai/analyze.
     """
     url = f"{BACKEND_URL}/ai/analyze"
-    
+
     payload = {
         "telegram_id": telegram_id,
         "first_name": first_name,
-        "username": username
+        "username": username,
     }
-    
+
     if text:
         payload["query"] = text
     if image_base64:
@@ -33,6 +34,29 @@ async def analyze_text_with_backend(
                 else:
                     error_text = await response.text()
                     print(f"❌ Error del Backend ({response.status}): {error_text}")
+                    return None
+    except Exception as e:
+        print(f"🔥 Error de conexión con el Backend: {e}")
+        return None
+
+
+async def get_daily_summary(telegram_id: int):
+
+    url = f"{BACKEND_URL}/food-logs/telegram/{telegram_id}/summary/today"
+    print(url)
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.json()
+                elif response.status == 404:
+                    return None
+                else:
+                    error_text = await response.text()
+                    print(
+                        f"❌ Error obteniendo resumen ({response.status}): {error_text}"
+                    )
                     return None
     except Exception as e:
         print(f"🔥 Error de conexión con el Backend: {e}")

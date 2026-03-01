@@ -8,6 +8,7 @@ from app.services.gemini import analyze_food_content
 from app.core.database import get_db
 from app.crud.user_crud import get_or_create_telegram_user
 from app.models.food_log import Source, FoodLog
+from app.services.cloudinary import upload_image_base64
 
 router = APIRouter()
 
@@ -55,6 +56,11 @@ async def analyze_food(
     if not ai_result:
         raise HTTPException(status_code=500, detail="Could not analyze food with AI")
 
+    uploaded_image_url = None
+    if request.image_base64:
+        print("☁️ Subiendo imagen a Cloudinary...")
+        uploaded_image_url = await upload_image_base64(request.image_base64)
+
     try:
         food_log_data = FoodLog(
             user_id=user.id,
@@ -63,7 +69,7 @@ async def analyze_food(
             proteins=float(ai_result.get("proteins", 0.0)),
             carbs=float(ai_result.get("carbs", 0.0)),
             fats=float(ai_result.get("fats", 0.0)),
-            image_url=None,
+            image_url=uploaded_image_url,
             source=Source.TELEGRAM,
         )
 

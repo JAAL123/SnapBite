@@ -20,3 +20,19 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
         ]
     )
     return keyboard
+
+
+def get_undo_keyboard(log_id: str) -> InlineKeyboardMarkup:
+    """
+    Genera un botón para deshacer/borrar un registro de comida recién creado.
+    """
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="❌ Deshacer (Borrar registro)", callback_data=f"undo_{log_id}"
+                )
+            ]
+        ]
+    )
+    return keyboard

@@ -82,3 +82,22 @@ async def update_user_goal(telegram_id: int, new_goal: float):
     except Exception as e:
         print(f"🔥 Error de conexión con el Backend: {e}")
         return None
+
+
+async def delete_food_log(telegram_id: int, log_id: str) -> bool:
+    url = f"{BACKEND_URL}/food-logs/telegram/{telegram_id}/log/{log_id}"
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.delete(url) as response:
+                if response.status == 200:
+                    return True
+                else:
+                    error_text = await response.text()
+                    print(
+                        f"❌ Error borrando registro ({response.status}): {error_text}"
+                    )
+                    return False
+    except Exception as e:
+        print(f"🔥 Error de conexión con el Backend: {e}")
+        return False

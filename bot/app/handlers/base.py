@@ -1,5 +1,6 @@
 from aiogram import Router, types
 from aiogram.filters import CommandStart, Command
+from aiogram.fsm.context import FSMContext
 
 router = Router()
 
@@ -18,8 +19,8 @@ async def cmd_start(message: types.Message):
 
 
 @router.message(Command("cancelar"))
-async def cmd_cancel(message: types.Message):
+async def cmd_cancel(message: types.Message, state: FSMContext):
+    await state.clear()
     await message.answer(
-        "✅ Acción cancelada. Puedes seguir registrando comidas enviándome texto o fotos.",
-        reply_markup=types.ReplyKeyboardRemove(),
+        "✅ Acción cancelada. Puedes seguir registrando comidas enviándome texto o fotos."
     )

@@ -14,7 +14,7 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
-                    text="🎯 Ajustar Meta (Próximamente)", callback_data="adjust_goal"
+                    text="🎯 Ajustar Meta de Calorías", callback_data="adjust_goal"
                 )
             ],
         ]

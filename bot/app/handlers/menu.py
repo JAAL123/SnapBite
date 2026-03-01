@@ -1,9 +1,15 @@
 from aiogram import Router, types, F
 from aiogram.filters import Command
 from app.keyboards import get_main_menu_keyboard
-from app.backend_client import get_daily_summary
+from app.backend_client import get_daily_summary, update_user_goal
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 
 router = Router()
+
+
+class UserSettings(StatesGroup):
+    waiting_for_new_goal = State()
 
 
 @router.message(Command("menu"))
@@ -34,7 +40,7 @@ async def process_summary_callback(callback_query: types.CallbackQuery):
         return
 
     macros = summary.get("macros", {})
-    
+
     text = (
         f"📊 *Tu Resumen de Hoy*\n\n"
         f"🎯 *Meta Diaria:* {summary.get('daily_goal')} kcal\n"
@@ -47,3 +53,41 @@ async def process_summary_callback(callback_query: types.CallbackQuery):
     )
 
     await callback_query.message.answer(text, parse_mode="Markdown")
+
+
+@router.callback_query(F.data == "adjust_goal")
+async def process_adjust_goal_callback(
+    callback_query: types.CallbackQuery, state: FSMContext
+):
+    await callback_query.answer()
+
+    await state.set_state(UserSettings.waiting_for_new_goal)
+
+    await callback_query.message.answer(
+        "🎯 Escribe tu nueva meta de calorías diarias (ej. `1800` o `2500`):",
+        parse_mode="Markdown",
+    )
+
+
+@router.message(UserSettings.waiting_for_new_goal)
+async def process_new_goal_input(message: types.Message, state: FSMContext):
+
+    try:
+        new_goal = float(message.text)
+        if new_goal < 500 or new_goal > 10000:
+            raise ValueError
+    except ValueError:
+        await message.answer("⚠️ Por favor, ingresa un número válido (ej. 2000).")
+        return
+
+    await message.bot.send_chat_action(chat_id=message.chat.id, action="typing")
+    result = await update_user_goal(telegram_id=message.from_user.id, new_goal=new_goal)
+
+    if not result:
+        await message.answer("😓 Hubo un error al guardar tu meta. Intenta más tarde.")
+    else:
+        await message.answer(
+            f"✅ ¡Excelente! Tu meta ha sido actualizada a **{new_goal} kcal**.",
+            parse_mode="Markdown",
+        )
+        await state.clear()

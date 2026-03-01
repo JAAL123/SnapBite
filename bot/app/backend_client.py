@@ -43,7 +43,6 @@ async def analyze_text_with_backend(
 async def get_daily_summary(telegram_id: int):
 
     url = f"{BACKEND_URL}/food-logs/telegram/{telegram_id}/summary/today"
-    print(url)
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -56,6 +55,28 @@ async def get_daily_summary(telegram_id: int):
                     error_text = await response.text()
                     print(
                         f"❌ Error obteniendo resumen ({response.status}): {error_text}"
+                    )
+                    return None
+    except Exception as e:
+        print(f"🔥 Error de conexión con el Backend: {e}")
+        return None
+
+
+async def update_user_goal(telegram_id: int, new_goal: float):
+
+    url = f"{BACKEND_URL}/food-logs/telegram/{telegram_id}/goal"
+
+    payload = {"new_goal": new_goal}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.patch(url, json=payload) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    error_text = await response.text()
+                    print(
+                        f"❌ Error actualizando meta ({response.status}): {error_text}"
                     )
                     return None
     except Exception as e:

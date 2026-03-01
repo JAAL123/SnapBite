@@ -39,3 +39,12 @@ class DailySummaryResponse(BaseModel):
     consumed_calories: float
     remaining_calories: float
     macros: MacrosResponse
+
+
+class GoalUpdateRequest(BaseModel):
+    new_goal: float
+
+
+class GoalUpdateResponse(BaseModel):
+    message: str
+    new_goal: float

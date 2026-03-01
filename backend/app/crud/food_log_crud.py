@@ -2,6 +2,7 @@ from uuid import UUID
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from app.models.user import User
 from sqlalchemy import func, cast, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -46,3 +47,20 @@ async def get_daily_summary_by_user(db: AsyncSession, user_id: UUID) -> dict:
         "total_carbs": totals.total_carbs or 0.0,
         "total_fats": totals.total_fats or 0.0,
     }
+
+
+async def update_daily_goal(
+    db: AsyncSession, user_id: UUID, new_goal: float
+) -> User | None:
+
+    user = await db.get(User, user_id)
+
+    if not user:
+        return None
+
+    user.daily_calory_goal = new_goal
+
+    await db.commit()
+    await db.refresh(user)
+
+    return user

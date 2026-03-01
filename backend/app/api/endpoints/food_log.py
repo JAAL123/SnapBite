@@ -10,12 +10,15 @@ from app.schemas.food_log_scheema import (
     FoodLogCreate,
     FoodLogResponse,
     DailySummaryResponse,
+    GoalUpdateResponse,
     MacrosResponse,
+    GoalUpdateRequest,
 )
 from app.crud.food_log_crud import (
     create_food_log,
     get_food_logs,
     get_daily_summary_by_user,
+    update_daily_goal,
 )
 
 router = APIRouter()
@@ -69,4 +72,26 @@ async def get_telegram_daily_summary(
             carbs=totals["total_carbs"],
             fats=totals["total_fats"],
         ),
+    )
+
+
+@router.patch("/telegram/{telegram_id}/goal")
+async def update_user_goal(
+    telegram_id: int,
+    request: GoalUpdateRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    query = select(User).where(User.telegram_id == telegram_id)
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario de Telegram no encontrado")
+
+    updated_user = await update_daily_goal(
+        db=db, user_id=user.id, new_goal=request.new_goal
+    )
+
+    return GoalUpdateResponse(
+        message="Goal Updated", new_goal=updated_user.daily_calory_goal
     )

@@ -6,8 +6,17 @@ from sqlalchemy import select
 from app.models.user import User
 from app.core.database import get_db
 from app.api import dependencies
-from app.schemas.food_log_scheema import FoodLogCreate, FoodLogResponse, DailySummaryResponse, MacrosResponse
-from app.crud.food_log_crud import create_food_log, get_food_logs, get_daily_summary_by_user
+from app.schemas.food_log_scheema import (
+    FoodLogCreate,
+    FoodLogResponse,
+    DailySummaryResponse,
+    MacrosResponse,
+)
+from app.crud.food_log_crud import (
+    create_food_log,
+    get_food_logs,
+    get_daily_summary_by_user,
+)
 
 router = APIRouter()
 
@@ -32,10 +41,11 @@ async def create_food_log_endpoint(
     return await create_food_log(db, food_log, user_id=current_user.id)
 
 
-@router.get("/telegram/{telegram_id}/summary/today", response_model=DailySummaryResponse)
+@router.get(
+    "/telegram/{telegram_id}/summary/today", response_model=DailySummaryResponse
+)
 async def get_telegram_daily_summary(
-    telegram_id: int,
-    db: Annotated[AsyncSession, Depends(get_db)]
+    telegram_id: int, db: Annotated[AsyncSession, Depends(get_db)]
 ):
 
     query = select(User).where(User.telegram_id == telegram_id)
@@ -48,14 +58,15 @@ async def get_telegram_daily_summary(
     totals = await get_daily_summary_by_user(db=db, user_id=user.id)
 
     consumed = totals["total_calories"]
-    
+
     return DailySummaryResponse(
         daily_goal=user.daily_calory_goal,
         consumed_calories=consumed,
         remaining_calories=user.daily_calory_goal - consumed,
         macros=MacrosResponse(
+            calories=consumed,
             proteins=totals["total_proteins"],
             carbs=totals["total_carbs"],
-            fats=totals["total_fats"]
-        )
+            fats=totals["total_fats"],
+        ),
     )

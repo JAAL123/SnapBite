@@ -37,5 +37,5 @@ class MacrosResponse(BaseModel):
 class DailySummaryResponse(BaseModel):
     daily_goal: float
     consumed_calories: float
-    remaning_calories: float
+    remaining_calories: float
     macros: MacrosResponse

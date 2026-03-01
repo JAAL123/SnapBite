@@ -68,3 +68,18 @@ async def update_daily_goal(
     await db.refresh(user)
 
     return user
+
+
+async def delete_food_log_by_user(
+    db: AsyncSession, log_id: UUID, user_id: UUID
+) -> bool:
+    query = select(FoodLog).where(FoodLog.id == log_id, FoodLog.user_id == user_id)
+    result = await db.execute(query)
+    log = result.scalar_one_or_none()
+
+    if not log:
+        return False
+
+    await db.delete(log)
+    await db.commit()
+    return True

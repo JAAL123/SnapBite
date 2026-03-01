@@ -11,6 +11,7 @@ from app.models.food_log import Source, FoodLog
 
 router = APIRouter()
 
+
 class AnalysisRequest(BaseModel):
     query: str | None = None
     image_base64: str | None = None
@@ -19,10 +20,11 @@ class AnalysisRequest(BaseModel):
     first_name: str
     username: str | None = None
 
+
 @router.post("/analyze")
 async def analyze_food(
     request: AnalysisRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],  # Inyectamos la BD
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     1. Autentica/Crea al usuario de Telegram.
@@ -68,6 +70,8 @@ async def analyze_food(
         db.add(food_log_data)
         await db.commit()
         await db.refresh(food_log_data)
+
+        ai_result["log_id"] = str(food_log_data.id)
 
     except Exception as e:
         await db.rollback()

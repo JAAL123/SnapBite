@@ -2,6 +2,8 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from uuid import UUID
+
 
 from app.models.user import User
 from app.core.database import get_db
@@ -19,6 +21,7 @@ from app.crud.food_log_crud import (
     get_food_logs,
     get_daily_summary_by_user,
     update_daily_goal,
+    delete_food_log_by_user,
 )
 
 router = APIRouter()
@@ -95,3 +98,24 @@ async def update_user_goal(
     return GoalUpdateResponse(
         message="Goal Updated", new_goal=updated_user.daily_calory_goal
     )
+
+
+@router.delete("/telegram/{telegram_id}/log/{log_id}")
+async def delete_telegram_log(
+    telegram_id: int, log_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]
+):
+    query_user = select(User).where(User.telegram_id == telegram_id)
+    result_user = await db.execute(query_user)
+    user = result_user.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    success = await delete_food_log_by_user(db=db, log_id=log_id, user_id=user.id)
+
+    if not success:
+        raise HTTPException(
+            status_code=404, detail="Register not found or not authorized to delete"
+        )
+
+    return {"message": "Register deleted successfully"}

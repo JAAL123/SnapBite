@@ -31,12 +31,16 @@ async def get_daily_summary_by_user(db: AsyncSession, user_id: UUID) -> dict:
     sv_tz = ZoneInfo("America/El_Salvador")
     today = datetime.now(sv_tz).date()
 
+    created_at_sv = func.timezone(
+        "America/El_Salvador", func.timezone("UTC", FoodLog.created_at)
+    )
+
     query = select(
         func.sum(FoodLog.calories).label("total_calories"),
         func.sum(FoodLog.proteins).label("total_proteins"),
         func.sum(FoodLog.carbs).label("total_carbs"),
         func.sum(FoodLog.fats).label("total_fats"),
-    ).where(FoodLog.user_id == user_id, cast(FoodLog.created_at, Date) == today)
+    ).where(FoodLog.user_id == user_id, cast(created_at_sv, Date) == today)
 
     result = await db.execute(query)
     totals = result.one()

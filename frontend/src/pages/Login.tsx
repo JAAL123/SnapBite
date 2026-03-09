@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { authService } from '../services/auth';
 import { useAuthStore } from '../store/authStore';
+import { translateError } from '../utils/errorMapper';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -36,8 +37,7 @@ export default function Login() {
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     {loginMutation.isError && (
                         <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
-                            {/* @ts-ignore - axios error tipado rápido */}
-                            {loginMutation.error?.response?.data?.detail || "Error al iniciar sesión"}
+                            {translateError(loginMutation.error)}
                         </div>
                     )}
 

@@ -34,7 +34,12 @@ async def read_food_logs(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(dependencies.get_current_user),
 ):
-    food_logs = await get_food_logs(db, skip=skip, limit=limit)
+    food_logs = await get_food_logs(
+        db,
+        skip=skip,
+        limit=limit,
+        user_id=current_user.id,
+    )
     return food_logs
 
 

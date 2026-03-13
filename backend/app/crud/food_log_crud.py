@@ -3,7 +3,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from app.models.user import User
-from sqlalchemy import func, cast, Date
+from sqlalchemy import func, cast, Date, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.food_log import FoodLog
@@ -21,9 +21,15 @@ async def create_food_log(
 
 
 async def get_food_logs(
-    db: AsyncSession, skip: int = 0, limit: int = 100
+    db: AsyncSession, user_id: UUID, skip: int = 0, limit: int = 100
 ) -> list[FoodLog]:
-    result = await db.execute(select(FoodLog).offset(skip).limit(limit))
+    result = await db.execute(
+        select(FoodLog)
+        .where(FoodLog.user_id == user_id)
+        .order_by(desc(FoodLog.created_at))
+        .offset(skip)
+        .limit(limit)
+    )
     return result.scalars().all()
 
 

@@ -9,6 +9,7 @@ cloudinary.config(
     secure=True,
 )
 
+
 async def upload_image_base64(image_base64: str) -> str | None:
     """
     Sube una imagen en formato base64 a Cloudinary y devuelve la URL segura.
@@ -25,4 +26,16 @@ async def upload_image_base64(image_base64: str) -> str | None:
 
     except Exception as e:
         print(f"Error subiendo imagen a Cloudinary: {e}")
+        return None
+
+
+async def upload_image(file) -> str | None:
+    """
+    Sube un archivo binario directamente a Cloudinary.
+    """
+    try:
+        response = cloudinary.uploader.upload(file, folder="snapbite_food_logs")
+        return response.get("secure_url")
+    except Exception as e:
+        print(f"Error subiendo archivo a Cloudinary: {e}")
         return None

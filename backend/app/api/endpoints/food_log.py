@@ -1,10 +1,10 @@
 from typing import Annotated, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
 
-
+from app.services.cloudinary import upload_image
 from app.models.user import User
 from app.core.database import get_db
 from app.api import dependencies
@@ -124,3 +124,31 @@ async def delete_telegram_log(
         )
 
     return {"message": "Register deleted successfully"}
+
+
+@router.post("/upload", response_model=FoodLogResponse)
+async def upload_food_web(
+    food_name: str = Form(...),
+    calories: float = Form(...),
+    proteins: float = Form(...),
+    carbs: float = Form(...),
+    fats: float = Form(...),
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(dependencies.get_current_user),
+):
+    image_url = await upload_image(file.file)
+
+    if not image_url:
+        raise HTTPException(status_code=500, detail="Image processing error")
+
+    food_log_in = FoodLogCreate(
+        food_name=food_name,
+        calories=calories,
+        proteins=proteins,
+        carbs=carbs,
+        fats=fats,
+        image_url=image_url,
+    )
+
+    return await create_food_log(db, food_log_in, user_id=current_user.id)

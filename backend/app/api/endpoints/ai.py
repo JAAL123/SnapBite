@@ -11,6 +11,7 @@ from app.crud.user_crud import get_or_create_telegram_user
 from app.models.food_log import Source, FoodLog
 from app.services.cloudinary import upload_image_base64
 from app.api import dependencies
+from app.schemas.ai_scheema import TextAnalysisRequest
 
 router = APIRouter()
 
@@ -105,5 +106,22 @@ async def analyze_food_web(
 
     if not ai_result:
         raise HTTPException(status_code=500, detail="AI could'nt analyze food")
+
+    return ai_result
+
+
+@router.post("/analyze-text-web")
+async def analyze_food_text_web(
+    request: TextAnalysisRequest,
+    current_user=Depends(dependencies.get_current_user),
+):
+    ai_result = await analyze_food_content(
+        text_query=request.query, image_bytes=None, mime_type=None
+    )
+
+    if not ai_result:
+        raise HTTPException(
+            status_code=500, detail="AI could'nt analyze food with provided text"
+        )
 
     return ai_result

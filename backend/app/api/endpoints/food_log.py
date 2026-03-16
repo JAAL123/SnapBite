@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -133,14 +133,16 @@ async def upload_food_web(
     proteins: float = Form(...),
     carbs: float = Form(...),
     fats: float = Form(...),
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(dependencies.get_current_user),
 ):
-    image_url = await upload_image(file.file)
+    image_url = None
 
-    if not image_url:
-        raise HTTPException(status_code=500, detail="Image processing error")
+    if file:
+        image_url = await upload_image(file.file)
+        if not image_url:
+            raise HTTPException(status_code=500, detail="Image processing error")
 
     food_log_in = FoodLogCreate(
         food_name=food_name,

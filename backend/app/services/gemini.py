@@ -32,7 +32,7 @@ async def analyze_food_content(
         
         The JSON structure must be exactly like this:
         {{
-            "food_name": "Short descriptive name",
+            "food_name": "Short descriptive name, don't put the nationality on the text",
             "calories": 0.0,
             "proteins": 0.0,
             "carbs": 0.0,

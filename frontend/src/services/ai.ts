@@ -17,5 +17,10 @@ export const aiService = {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
-    }
+    },
+
+    async analyzeText(query: string): Promise<AIAnalysisResponse> {
+        const response = await api.post('/ai/analyze-text-web', { query });
+        return response.data;
+    },
 };

@@ -3,20 +3,31 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { aiService, type AIAnalysisResponse } from '../services/ai';
 import { foodLogService } from '../services/foodLogs';
 
-export default function AddFoodModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+interface Props {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export default function AddFoodModal({ isOpen, onClose }: Props) {
+
+    const [mode, setMode] = useState<'image' | 'text'>('image');
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
+    const [textQuery, setTextQuery] = useState('');
     const [analysis, setAnalysis] = useState<AIAnalysisResponse | null>(null);
 
     const queryClient = useQueryClient();
 
-    // Mutación para analizar con IA
-    const aiMutation = useMutation({
+    const aiImageMutation = useMutation({
         mutationFn: (file: File) => aiService.analyzeImage(file),
         onSuccess: (data) => setAnalysis(data),
     });
 
-    // Mutación para guardar final
+    const aiTextMutation = useMutation({
+        mutationFn: (query: string) => aiService.analyzeText(query),
+        onSuccess: (data) => setAnalysis(data),
+    });
+
     const saveMutation = useMutation({
         mutationFn: (formData: FormData) => foodLogService.uploadLog(formData),
         onSuccess: () => {
@@ -27,28 +38,21 @@ export default function AddFoodModal({ isOpen, onClose }: { isOpen: boolean; onC
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
-        if (!selectedFile) return;
+        if (selectedFile) {
 
-        const fileName = selectedFile.name.toLowerCase();
-        const isValidWebFormat = fileName.endsWith('.jpg') ||
-            fileName.endsWith('.jpeg') ||
-            fileName.endsWith('.png') ||
-            fileName.endsWith('.webp');
+            setFile(selectedFile);
+            if (preview) URL.revokeObjectURL(preview);
+            const objectUrl = URL.createObjectURL(selectedFile);
+            setPreview(objectUrl);
 
-
-        if (!isValidWebFormat) {
-            alert("Formato de imagen no soportado. Por favor sube archivos JPG, PNG o WebP.");
-            e.target.value = '';
-            return;
+            aiImageMutation.mutate(selectedFile);
         }
+    };
 
-        setFile(selectedFile);
-        if (preview) URL.revokeObjectURL(preview);
-
-        const objectUrl = URL.createObjectURL(selectedFile);
-        setPreview(objectUrl);
-
-        aiMutation.mutate(selectedFile);
+    const handleTextAnalyze = () => {
+        if (textQuery.trim()) {
+            aiTextMutation.mutate(textQuery);
+        }
     };
 
     const handleClose = () => {
@@ -56,23 +60,34 @@ export default function AddFoodModal({ isOpen, onClose }: { isOpen: boolean; onC
         setFile(null);
         setPreview(null);
         setAnalysis(null);
-        aiMutation.reset(); // Limpia el estado de la mutación
+        setTextQuery('');
+        setMode('image');
+        aiImageMutation.reset();
+        aiTextMutation.reset();
         onClose();
     };
 
     const handleSave = () => {
-        if (!file || !analysis) return;
+        if (!analysis) return;
+
         const formData = new FormData();
-        formData.append('file', file);
+
+        if (mode === 'image' && file) {
+            formData.append('file', file);
+        }
+
         formData.append('food_name', analysis.food_name);
         formData.append('calories', analysis.calories.toString());
         formData.append('proteins', analysis.proteins.toString());
         formData.append('carbs', analysis.carbs.toString());
         formData.append('fats', analysis.fats.toString());
+
         saveMutation.mutate(formData);
     };
 
     if (!isOpen) return null;
+
+    const isAnalyzing = aiImageMutation.isPending || aiTextMutation.isPending;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
@@ -83,85 +98,96 @@ export default function AddFoodModal({ isOpen, onClose }: { isOpen: boolean; onC
                         <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors">✕</button>
                     </div>
 
-                    {/* Área de Imagen con Preview Corregido */}
-                    <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                        {preview ? (
-                            <img
-                                src={preview}
-                                className="h-full w-full object-cover block" // Agregamos 'block' para forzar renderizado
-                                alt="Preview"
-                                onLoad={() => console.log("Preview cargado con éxito")}
-                            />
-                        ) : (
-                            <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
-                                <span className="text-5xl">📸</span>
-                                <p className="text-sm font-medium text-gray-500 mt-2 text-center px-4">
-                                    Sube una foto para analizar
-                                </p>
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    onChange={handleFileChange}
-                                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                />
-                            </label>
-                        )}
-
-                        {/* Overlay de Carga de IA */}
-                        {aiMutation.isPending && (
-                            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-200">
-                                <div className="h-12 w-12 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent shadow-sm"></div>
-                                <p className="text-emerald-700 font-black mt-4 text-sm uppercase tracking-tighter">Analizando nutrición...</p>
-                            </div>
-                        )}
+                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                        <button
+                            onClick={() => { setMode('image'); setAnalysis(null); }}
+                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'image' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-400'}`}
+                        >
+                            📸 Foto
+                        </button>
+                        <button
+                            onClick={() => { setMode('text'); setAnalysis(null); }}
+                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'text' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-400'}`}
+                        >
+                            ✍️ Descripción
+                        </button>
                     </div>
 
-                    {/* Resultados de la IA (Solo lectura, vienen del backend) */}
+                    {mode === 'image' ? (
+                        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center group hover:border-emerald-300 transition-all">
+                            {preview ? (
+                                <img src={preview} className="h-full w-full object-cover block" alt="Preview" />
+                            ) : (
+                                <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full p-6 text-center">
+                                    <span className="text-5xl mb-3">📸</span>
+                                    <p className="text-sm font-bold text-gray-400">Toca para subir una foto</p>
+                                    <input type="file" className="hidden" onChange={handleFileChange} accept=".jpg,.jpeg,.png,.webp" />
+                                </label>
+                            )}
+                            {aiImageMutation.isPending && (
+                                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center">
+                                    <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent"></div>
+                                    <p className="text-emerald-700 font-black mt-4 text-xs">ANALIZANDO IMAGEN...</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <textarea
+                                className="w-full p-4 rounded-2xl border-2 border-gray-100 focus:border-emerald-500 outline-none resize-none h-32 text-sm"
+                                placeholder="Ej: Tres pupusas de revuelta con curtido y salsa..."
+                                value={textQuery}
+                                onChange={(e) => setTextQuery(e.target.value)}
+                            />
+                            <button
+                                onClick={handleTextAnalyze}
+                                disabled={isAnalyzing || !textQuery.trim()}
+                                className="w-full py-2 bg-emerald-100 text-emerald-700 rounded-xl font-bold text-xs hover:bg-emerald-200 transition-colors"
+                            >
+                                {aiTextMutation.isPending ? 'Analizando...' : 'Analizar texto'}
+                            </button>
+                        </div>
+                    )}
+
                     {analysis && (
                         <div className="animate-in slide-in-from-bottom-2 fade-in duration-500">
                             <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
-                                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Resultado del análisis</p>
-                                <h3 className="text-xl font-black text-gray-800 capitalize leading-tight">{analysis.food_name}</h3>
+                                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Identificado como</p>
+                                <h3 className="text-lg font-black text-gray-800 capitalize leading-tight">{analysis.food_name}</h3>
 
                                 <div className="grid grid-cols-4 gap-2 mt-4">
                                     <div className="bg-white p-2 rounded-xl border border-emerald-100/50 shadow-sm text-center">
-                                        <span className="block text-lg font-black text-gray-800 leading-none">{analysis.calories}</span>
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Kcal</span>
+                                        <span className="block text-lg font-black text-gray-800">{analysis.calories}</span>
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase">Kcal</span>
                                     </div>
                                     <div className="bg-white p-2 rounded-xl border border-emerald-100/50 shadow-sm text-center">
-                                        <span className="block text-lg font-black text-emerald-600 leading-none">{analysis.proteins}g</span>
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Prot</span>
+                                        <span className="block text-lg font-black text-emerald-600">{analysis.proteins}g</span>
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase">Prot</span>
                                     </div>
                                     <div className="bg-white p-2 rounded-xl border border-emerald-100/50 shadow-sm text-center">
-                                        <span className="block text-lg font-black text-blue-600 leading-none">{analysis.carbs}g</span>
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Carb</span>
+                                        <span className="block text-lg font-black text-blue-600">{analysis.carbs}g</span>
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase">Carb</span>
                                     </div>
                                     <div className="bg-white p-2 rounded-xl border border-emerald-100/50 shadow-sm text-center">
-                                        <span className="block text-lg font-black text-orange-600 leading-none">{analysis.fats}g</span>
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Fat</span>
+                                        <span className="block text-lg font-black text-orange-600">{analysis.fats}g</span>
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase">Fat</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Acciones */}
                     <div className="flex gap-3 pt-2">
-                        <button
-                            onClick={handleClose}
-                            className="flex-1 py-3.5 font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-2xl transition-all text-sm"
-                        >
+                        <button onClick={handleClose} className="flex-1 py-3 font-bold text-gray-400 hover:bg-gray-50 rounded-2xl text-sm transition-all">
                             Cancelar
                         </button>
                         <button
                             disabled={!analysis || saveMutation.isPending}
                             onClick={handleSave}
-                            className={`flex-[2] py-3.5 rounded-2xl font-black text-white shadow-lg transition-all text-sm uppercase tracking-tight ${!analysis
-                                ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
-                                : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] shadow-emerald-200'
+                            className={`flex-[2] py-3 rounded-2xl font-black text-white shadow-lg transition-all text-sm uppercase ${!analysis ? 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95'
                                 }`}
                         >
-                            {saveMutation.isPending ? 'Guardando...' : 'Confirmar Comida'}
+                            {saveMutation.isPending ? 'Guardando...' : 'Confirmar y Guardar'}
                         </button>
                     </div>
                 </div>

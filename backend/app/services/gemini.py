@@ -27,7 +27,8 @@ async def analyze_food_content(
         
         Estimate the nutritional values.
         IMPORTANT: All text fields in the JSON (like food_name and portion_description) MUST BE IN SPANISH.
-        You MUST return the result in raw JSON format (without Markdown code blocks).
+        You MUST return the result in raw JSON format (without Markdown code blocks)
+        Base your analysis on the gastronomy of El Salvador.
         
         The JSON structure must be exactly like this:
         {{

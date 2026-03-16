@@ -3,12 +3,14 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
+from fastapi import UploadFile, File
 
 from app.services.gemini import analyze_food_content
 from app.core.database import get_db
 from app.crud.user_crud import get_or_create_telegram_user
 from app.models.food_log import Source, FoodLog
 from app.services.cloudinary import upload_image_base64
+from app.api import dependencies
 
 router = APIRouter()
 
@@ -83,5 +85,25 @@ async def analyze_food(
         await db.rollback()
         print(f"Error guardando FoodLog: {e}")
         raise HTTPException(status_code=500, detail="Error saving FoodLog")
+
+    return ai_result
+
+
+@router.post("/analyze-web")
+async def analyze_food_web(
+    file: UploadFile = File(...), current_user=Depends(dependencies.get_current_user)
+):
+
+    image_bytes = await file.read()
+
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="No valid image file provided")
+
+    ai_result = await analyze_food_content(
+        text_query=None, image_bytes=image_bytes, mime_type=file.content_type
+    )
+
+    if not ai_result:
+        raise HTTPException(status_code=500, detail="AI could'nt analyze food")
 
     return ai_result

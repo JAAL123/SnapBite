@@ -2,8 +2,12 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { foodLogService } from '../services/foodLogs'
+import AddFoodModal from '../components/AddFoodModal';
+import { useState } from 'react';
 
 export default function Dashboard() {
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const logout = useAuthStore((state) => state.logout);
     const navigate = useNavigate();
 
@@ -28,6 +32,14 @@ export default function Dashboard() {
                         </h1>
                         <p className="text-gray-500 mt-1">Aquí están tus registros recientes</p>
                     </div>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="bg-emerald-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-emerald-700 transition-all"
+                    >
+                        + Agregar Comida
+                    </button>
+
+                    <AddFoodModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
                     <button
                         onClick={handleLogout}
                         className="rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"

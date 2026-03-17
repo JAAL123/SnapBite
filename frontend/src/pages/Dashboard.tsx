@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { foodLogService } from '../services/foodLogs'
 import AddFoodModal from '../components/AddFoodModal';
 import { useState } from 'react';
+import foodFallback from '../assets/food-fallback.jpg'
 
 export default function Dashboard() {
 
@@ -78,7 +79,7 @@ export default function Dashboard() {
                             >
                                 <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
                                     <img
-                                        src={log.image_url}
+                                        src={log.image_url || foodFallback}
                                         alt={log.food_name}
                                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                         loading="lazy"

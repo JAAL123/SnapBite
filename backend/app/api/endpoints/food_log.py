@@ -154,3 +154,25 @@ async def upload_food_web(
     )
 
     return await create_food_log(db, food_log_in, user_id=current_user.id)
+
+
+@router.get("/summary/today")
+async def get_daily_summary(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user=Depends(dependencies.get_current_user),
+):
+    totals = await get_daily_summary_by_user(db=db, user_id=current_user.id)
+
+    consumed = totals["total_calories"]
+
+    return DailySummaryResponse(
+        daily_goal=current_user.daily_calory_goal,
+        consumed_calories=consumed,
+        remaining_calories=max(0, current_user.daily_calory_goal - consumed),
+        macros=MacrosResponse(
+            calories=consumed,
+            proteins=totals["total_proteins"],
+            carbs=totals["total_carbs"],
+            fats=totals["total_fats"],
+        ),
+    )
